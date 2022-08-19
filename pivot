@@ -1,0 +1,29 @@
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+
+# Create a new sheet with just the births data and rename year column
+raw_xl <- read_excel("~/Downloads/Monthly births by country Lyman Stone.xlsx",
+                     sheet = "Sheet2",
+                     na = c("", " ", "."))
+
+raw_xl %>%
+  # Pivot to one row for each country, year and month
+  pivot_longer(
+    cols = 3:14,
+    names_to = "month",
+    values_to = "births"
+  ) %>%
+  # Create a mmm-yy column from the year and month name
+  mutate(
+    month_number = match(month, month.name),
+    date = make_date(year, month_number, 1),
+    year_month = format(date, "%b-%y")
+  ) %>%
+  # remove column not needed
+  select(CountryCode, year_month, births) %>%
+  # pivot wider with countries as columns
+  pivot_wider(names_from = CountryCode, values_from = births) %>%
+  # write file
+  readr::write_csv("~/Downloads/monthly_births_pivot.csv")
